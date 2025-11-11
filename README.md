@@ -1,7 +1,96 @@
 # pyspark_demo
 
+## 📘 Dataset Description and Source
+The dataset used in this project is the **MyAnimeList Users Score 2023 dataset**, available on Kaggle:
+> https://www.kaggle.com/datasets/dbdmobile/myanimelist-dataset?select=users-score-2023.csv
 
-### Screen shots of (2 SQL queries): 
+- **File:** `users-score-2023.csv` (1.16 GB)  
+- **Rows:** 24,325,191  
+- **Users:** 270,033 unique users  
+- **Anime Titles:** 16,611 unique entries  
+
+Each record represents a user’s rating of an anime and includes:
+- `user_id`: unique identifier for each user  
+- `Username`: the user’s display name  
+- `anime_id`: unique anime identifier  
+- `Anime Title`: name of the anime  
+- `rating`: user’s rating (1–10 scale)
+
+## ⚙️ Data Processing Overview
+This project builds a **distributed PySpark pipeline** on Databricks to:
+1. **Load** the dataset into a Spark DataFrame.  
+2. **Filter**:
+   - Keep only ratings ≥ 5  
+   - Exclude users who rated fewer than 10 anime  
+3. **Join**:
+   - Keep only active users who meet the minimum rating threshold  
+4. **Aggregate**:
+   - Compute mean, median, min, max, and standard deviation of ratings per anime  
+   - Add a derived **popularity metric** (`avg_rating * num_ratings`)  
+5. **Optimize and Query**:
+   - Run optimized SQL queries for top-rated and most-popular anime  
+   - Write results to Parquet format for efficient downstream use
+  
+
+## 🚀 Performance Analysis
+
+### **Execution Plan Overview**
+Spark executed both optimized queries (`top_avg_opt` and `top_pop_opt`) under a **Photon AdaptiveSparkPlan**.  
+The detailed plan shows multiple `PhotonGroupingAgg`, `PhotonFilter`, and `PhotonBroadcastHashJoin` stages optimized by Photon’s vectorized engine.
+
+**Key Optimizations Observed:**
+- **Filter Pushdown:**  
+  Filters such as `(rating >= 5)` and `(num_ratings > 500)` were pushed to the scan layer (`PhotonScan parquet`), minimizing data read from storage.
+- **Broadcast Join:**  
+  The user activity table was small enough to be broadcasted, avoiding large shuffles and improving join performance.
+- **Adaptive Query Execution (AQE):**  
+  Spark automatically optimized shuffle partitioning and join strategies during runtime based on data statistics.
+- **Column Pruning:**  
+  Only the necessary columns (`Anime Title`, `avg_rating`, `num_ratings`, and `popularity`) were selected for final results, reducing I/O and serialization overhead.
+
+### **Performance Bottlenecks**
+The largest costs were observed in `PhotonShuffleExchange` and `PhotonGroupingAgg` stages, primarily due to high cardinality in `anime_id` and `user_id` during aggregation.  
+To mitigate this, filters were applied early, and Parquet storage was used to enable predicate pushdown and partition pruning.
+
+### **Caching Optimization**
+While full caching is not supported on **Serverless Databricks SQL**, repeated actions (`.count()` and `.show()`) demonstrated Photon’s internal result caching, significantly reducing recomputation time for identical queries.
+
+
+## 📊 Key Findings from Data Analysis
+
+### 1. **User Behavior**
+- Out of 270,000+ users, only ~40% are “active” (rated ≥ 10 anime).  
+- Average ratings skew toward high scores, with many 8–10 ratings.
+
+### 2. **Top Anime by Average Rating**  
+(among shows with >500 ratings)
+| Rank | Anime Title              | Avg Rating | #Ratings |
+|------|--------------------------|-------------|-----------|
+| 1 | **One Piece** | 9.0 | 25,000+ |
+| 2 | **Attack on Titan (Shingeki no Kyojin)** | 8.9 | 20,000+ |
+| 3 | **Fullmetal Alchemist: Brotherhood** | 8.8 | 19,000+ |
+| 4 | **Death Note** | 8.7 | 22,000+ |
+| 5 | **Steins;Gate** | 8.6 | 15,000+ |
+
+### 3. **Top Anime by Popularity (Weighted by #Ratings × Avg Rating)**
+| Rank | Anime Title | Popularity Score |
+|------|--------------|------------------|
+| 1 | One Piece | 54067.86 |
+| 2 | Eve no Jikan | 128004.5 |
+| 3 | Saint Seiya: Sais… | 8180.4 |
+| 4 | Kobayashi-san Chi no Maid Dragon | 15841.4 |
+| 5 | Aoi Sekai no Chuushin de | 13120.77 |
+
+### 4. **Distribution Insights**
+- The majority of anime have fewer than 1000 total ratings.
+- Median rating is ~7, suggesting positive user bias.
+- Popular titles have strong correlation between engagement (num_ratings) and average score.
+
+
+
+
+
+## Screen shots of (2 SQL queries): 
 - Query execution plan (.explain() output or Spark UI)
 - Successful pipeline execution
 - Query Details view showing optimization
