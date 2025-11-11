@@ -369,7 +369,10 @@ The query is fully supported by Photon.
   full    = users_score_2023, users_score_2023
 ```
 
-![Screenshot 2025-11-11 at 1.13.48 PM.png](./Screenshot 2025-11-11 at 1.13.48 PM.png "Screenshot 2025-11-11 at 1.13.48 PM.png")
+![Screenshot 2025-11-11 at 1.13.48 PM.png](./Screenshot 2025-11-11 at 1.13.48 PM.png "Screenshot 2025-11-11 at 1.13.48 PM.png")<img width="1332" height="800" alt="Screenshot 2025-11-11 at 1 13 48 PM" src="https://github.com/user-attachments/assets/f4ef5154-66c1-43ee-88c0-c75a77247070" />
+
+
+<img width="1406" height="901" alt="Screenshot 2025-11-11 at 1 13 19 PM" src="https://github.com/user-attachments/assets/03567cae-c9aa-41b6-bb91-fc2874b6a06e" />
 
 
 ![Screenshot 2025-11-11 at 1.13.19 PM.png](./Screenshot 2025-11-11 at 1.13.19 PM.png "Screenshot 2025-11-11 at 1.13.19 PM.png")
